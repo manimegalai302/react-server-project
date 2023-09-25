@@ -6,6 +6,8 @@ const Data = () => {
   const [form, setForm] = useState(false);
   let [title, setTitle] = useState("");
   let [body, setBody] = useState("");
+  let [isedit, setIsedit] = useState(false);
+  let [editId, setEditId] = useState(null); 
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -45,31 +47,53 @@ const Data = () => {
     }
   }
 
-  async function UpdateData(id) {
-    try {
-      setForm(false);
-      setTitle(title);
-      setBody(body);
-      await axios.put(`http://localhost:3030/posts/${id}`);
-      const updatedElement = element.filter((ele) => ele.id !== id);
-      setElement(updatedElement);
-    } catch (error) {
-      console.error("Error updating data:", error);
-    }
+  function UpdateData(id) {
+    setForm(true);
+    setIsedit(true);
+    setEditId(id);
+    const updateData = element.find((update) => {
+      return update.id === id;
+    });
+    setTitle(updateData.title);
+    setBody(updateData.body);
   }
 
   function handleForm() {
     setForm(true);
+    setIsedit(false); 
+    setTitle("");
+    setBody("");
+  }
+
+  async function handleUpdate(event) {
+    event.preventDefault();
+    const newData = { title: title, body: body };
+
+    try {
+      const response = await axios.put(
+        `http://localhost:3030/posts/${editId}`,
+        newData
+      );
+      const updatedElement = element.map((ele) =>
+        ele.id === editId ? response.data : ele
+      );
+      setElement(updatedElement);
+      setForm(false);
+      setTitle("");
+      setBody("");
+    } catch (error) {
+      console.error("Error updating data:", error);
+    }
   }
 
   return (
     <div className="container">
       {form ? (
         <div className="content">
-          <h3>Add</h3>
-          <form onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="title">Title:</label>
+          <h3>{isedit ? "Update" : "Add"}</h3>
+          <form>
+            <div className="item">
+              <label htmlFor="title">Title</label>
               <input
                 type="text"
                 value={title}
@@ -78,8 +102,8 @@ const Data = () => {
                 className="form-control"
               />
             </div>
-            <div>
-              <label htmlFor="body">Body:</label>
+            <div className="item">
+              <label htmlFor="body">Body</label>
               <input
                 type="text"
                 value={body}
@@ -89,21 +113,29 @@ const Data = () => {
               />
             </div>
             <br />
-            <button className="submit">submit</button>
+            {isedit ? (
+              <button className="submit" onClick={handleUpdate}>
+                Update
+              </button>
+            ) : (
+              <button className="submit" onClick={handleSubmit}>
+                Submit
+              </button>
+            )}
           </form>
         </div>
       ) : (
-        <div>
+        <div className="display">
           <button className="add" onClick={handleForm}>
             Add
           </button>
-          <div>
+          <div className="display-element">
             {element.map((ele) => (
               <div key={ele.id} className="container-element">
                 <p>{ele.title}</p>
                 <p>{ele.body}</p>
                 <button className="update" onClick={() => UpdateData(ele.id)}>
-                  update
+                  Update
                 </button>
                 <button className="delete" onClick={() => DeleteData(ele.id)}>
                   Delete
